@@ -17,6 +17,3 @@ uninstall:
 
 clean:
 	rm -f *.o libctemplate.so
-
-test:
-	cd t; ./test.sh
