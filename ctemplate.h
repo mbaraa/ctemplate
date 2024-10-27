@@ -16,6 +16,8 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include "./buffer.h"
+
 typedef struct TMPL_varlist TMPL_varlist;
 typedef struct TMPL_loop TMPL_loop;
 typedef struct TMPL_fmtlist TMPL_fmtlist;
@@ -44,6 +46,11 @@ void TMPL_free_fmtlist(TMPL_fmtlist *fmtlist);
 int TMPL_write(const char *filename, const char *tmplstr,
                const TMPL_fmtlist *fmtlist, const TMPL_varlist *varlist,
                FILE *out, FILE *errout);
+
+int TMPL_write_to_buffer(const char *filename, const char *tmplstr,
+                         const TMPL_fmtlist *fmtlist,
+                         const TMPL_varlist *varlist, buffer *buf,
+                         FILE *errout);
 
 void TMPL_encode_entity(const char *value, FILE *out);
 

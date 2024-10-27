@@ -22,7 +22,9 @@ sudo make install
 2. Go nuts.
 
 # Available functions:
+
 - Old
+
   - `TMPL_write()` expands and outputs a template.
   - `TMPL_add_var()` adds simple variables to a variable list.
   - `TMPL_add_varlist()` adds a variable list to a loop variable.
@@ -32,4 +34,5 @@ sudo make install
   - `TMPL_free_fmtlist()` frees memory used by a format function list.
 
 - New
-  - `TMPL_make_var_list()` returns a TMPL_varlist from the given char\* arguments
+  - `TMPL_make_var_list()` returns a TMPL_varlist from the given char\* arguments.
+  - `TMPL_write_to_buffer()` same as `TMPL_write` but using a bytes buffer instead of a file.

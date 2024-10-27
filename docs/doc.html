@@ -509,6 +509,11 @@
       </li>
 
       <li>
+        <a href="#TMPL_write_to_buffer">TMPL_write_to_buffer()</a> expands and
+        outputs a template to a buffer instead of a file.
+      </li>
+
+      <li>
         <a href="#TMPL_add_var">TMPL_add_var()</a> adds simple variables to a
         variable list.
       </li>
@@ -578,6 +583,30 @@
         successful, TMPL_write() returns zero, otherwise -1. TMPL_write() fails
         if the template file (or any included file) cannot be opened or if any
         template file has syntax errors.
+      </dd>
+
+      <dt>
+        int
+        <a name="TMPL_write_to_buffer" id="TMPL_write_to_buffer"></a
+        >TMPL_write_to_buffer (const char *filename, const char *tmplstr, const
+        TMPL_fmtlist *fmtlist, const TMPL_varlist *varlist, buffer *buf, FILE
+        *errout);
+      </dt>
+
+      <dd>
+        TMPL_write_to_buffer() processes a template file and a variable list and
+        outputs the result. Parameter <i>filename</i> is the name of the
+        template file. If parameter <i>tmplstr</i> is non-null, then it is the
+        template, a null terminated string. (You can still pass a name for the
+        template in <i>filename</i>, which will appear in error messages.)
+        Parameter <i>fmtlist</i> (which may be null) is an optional format
+        function list that the template uses to output variables. Parameter
+        <i>varlist</i> is a variable list and parameter <i>buf</i> is a buffer
+        pointer where the result is written. Error messages are written to open
+        file pointer <i>errout</i>, which may be null to suppress error
+        messages. If successful, TMPL_write_to_buffer() returns zero, otherwise
+        -1. TMPL_write_to_buffer() fails if the template file (or any included
+        file) cannot be opened or if any template file has syntax errors.
       </dd>
 
       <dt>

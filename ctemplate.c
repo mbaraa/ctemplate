@@ -121,6 +121,7 @@ struct template {
   const char *filename;        /* name of template file */
   const char *tmplstr;         /* contents of template file */
   FILE *out;                   /* template output file pointer */
+  buffer *out_buffer;          /* template output file pointer */
   FILE *errout;                /* error output file pointer */
   tagnode *roottag;            /* root of parse tree */
   const TMPL_fmtlist *fmtlist; /* list of format functions */
@@ -201,14 +202,14 @@ static void *mymalloc(size_t size) {
 }
 
 /*
- * newtemplate() creates a new template struct and reads the template
+ * new_template() creates a new template struct and reads the template
  * file "filename" into memory.  If "tmplstr" is non-null then it is
  * the template, so we do not read "filename".
  */
 
-static template *newtemplate(const char *filename, const char *tmplstr,
-                             const TMPL_fmtlist *fmtlist, FILE *out,
-                             FILE *errout) {
+static template *new_template(const char *filename, const char *tmplstr,
+                              const TMPL_fmtlist *fmtlist, FILE *out,
+                              FILE *errout) {
   template *t;
   FILE *fp;
   char *buf = 0;
@@ -250,6 +251,65 @@ static template *newtemplate(const char *filename, const char *tmplstr,
   t->scanptr = t->tmplstr;
   t->roottag = t->curtag = t->nexttag = 0;
   t->out = out;
+  t->errout = errout;
+  t->linenum = 1;
+  t->error = 0;
+  t->include_depth = 0;
+  t->loop_depth = 0;
+  t->break_level = t->cont_level = 0;
+  return t;
+}
+
+/*
+ * new_template_for_buffer() creates a new template struct and reads the
+ * template file "filename" into memory.  If "tmplstr" is non-null then it is
+ * the template, so we do not read "filename".
+ */
+static template *new_template_for_buffer(const char *filename,
+                                         const char *tmplstr,
+                                         const TMPL_fmtlist *fmtlist,
+                                         buffer *buffer, FILE *errout) {
+  template *t;
+  FILE *fp;
+  char *buf = 0;
+  struct stat stb;
+
+  if (tmplstr == 0 && filename == 0) {
+    if (errout != 0) {
+      fputs("C Template library: no template specified\n", errout);
+    }
+    return 0;
+  }
+  if (tmplstr == 0) {
+    if ((fp = fopen(filename, "r")) != 0 && fstat(fileno(fp), &stb) == 0 &&
+        S_ISREG(stb.st_mode) != 0 &&
+        (buf = (char *)mymalloc(stb.st_size + 1)) != 0 &&
+        (stb.st_size == 0 || fread(buf, 1, stb.st_size, fp) == stb.st_size)) {
+      fclose(fp);
+      buf[stb.st_size] = 0;
+    } else {
+      if (errout != 0) {
+        fprintf(errout,
+                "C Template library: failed to read "
+                "template from file \"%s\"\n",
+                filename);
+      }
+      if (buf != 0) {
+        free(buf);
+      }
+      if (fp != 0) {
+        fclose(fp);
+      }
+      return 0;
+    }
+  }
+  t = (template *)mymalloc(sizeof(*t));
+  t->filename = filename != 0 ? filename : "(none)";
+  t->tmplstr = tmplstr != 0 ? tmplstr : buf;
+  t->fmtlist = fmtlist;
+  t->scanptr = t->tmplstr;
+  t->roottag = t->curtag = t->nexttag = 0;
+  t->out_buffer = buffer;
   t->errout = errout;
   t->linenum = 1;
   t->error = 0;
@@ -1046,6 +1106,46 @@ static void write_text(const char *p, int len, FILE *out) {
 }
 
 /*
+ * write_text_buffer() writes a text sequence handling \ escapes.
+ *
+ * A single \ at the end of a line is not output and neither
+ * is the line terminator (\n or \r\n).
+ *
+ * \\ at the end of a line is output as a single \ followed
+ * by the line terminator.
+ *
+ * Any other \ is output unchanged.
+ */
+
+static void write_text_buffer(const char *p, int len, buffer *buf) {
+  int i, k;
+
+  for (i = 0; i < len; i++) {
+
+    /* check for \ or \\ before \n or \r\n */
+
+    if (p[i] == '\\') {
+      k = i + 1;
+      if (k < len && p[k] == '\\') {
+        k++;
+      }
+      if (k < len && p[k] == '\r') {
+        k++;
+      }
+      if (k < len && p[k] == '\n') {
+        if (p[i + 1] == '\\') {
+          i++; /* skip first \ */
+        } else {
+          i = k; /* skip \ and line terminator */
+          continue;
+        }
+      }
+    }
+    buffer_write_byte(buf, p[i]);
+  }
+}
+
+/*
  * newfilename() returns a copy of an include file name with
  * possible modifications.  If the include file name begins
  * with ".../" then we replace "..." with the directory name
@@ -1090,7 +1190,10 @@ static void walk(template *t, tagnode *tag, const TMPL_varlist *varlist) {
   switch (tag->kind) {
 
   case tag_text:
-    write_text(tag->tag.text.start, tag->tag.text.len, t->out);
+    if (t->out != NULL)
+      write_text(tag->tag.text.start, tag->tag.text.len, t->out);
+    else if (t->out_buffer != NULL)
+      write_text_buffer(tag->tag.text.start, tag->tag.text.len, t->out_buffer);
     break;
 
   case tag_var:
@@ -1104,7 +1207,10 @@ static void walk(template *t, tagnode *tag, const TMPL_varlist *varlist) {
     if (tag->tag.var.fmtfunc != 0) {
       tag->tag.var.fmtfunc(value, t->out);
     } else {
-      fputs(value, t->out);
+      if (t->out != NULL)
+        fputs(value, t->out);
+      else if (t->out_buffer != NULL)
+        buffer_write(t->out_buffer, value, strlen(value));
     }
     break;
 
@@ -1168,7 +1274,12 @@ static void walk(template *t, tagnode *tag, const TMPL_varlist *varlist) {
 
     if ((t2 = tag->tag.include.tmpl) == 0) {
       newfile = newfilename(tag->tag.include.filename, t->filename);
-      t2 = newtemplate(newfile, 0, t->fmtlist, t->out, t->errout);
+      if (t->out != NULL)
+        t2 = new_template(newfile, 0, t->fmtlist, t->out, t->errout);
+      else if (t->out_buffer != NULL)
+        t2 = new_template_for_buffer(newfile, 0, t->fmtlist, t->out_buffer,
+                                     t->errout);
+
       if (t2 == 0) {
         free((void *)newfile);
         t->error = 1;
@@ -1184,6 +1295,10 @@ static void walk(template *t, tagnode *tag, const TMPL_varlist *varlist) {
     walk(t2, t2->roottag, varlist);
     t->error = t2->error;
     break;
+
+  case tag_else:
+  case tag_endif:
+  case tag_endloop:
   }
   walk(t, tag->next, varlist);
 }
@@ -1389,9 +1504,42 @@ int TMPL_write(const char *filename, const char *tmplstr,
   int ret;
   template *t;
 
-  if ((t = newtemplate(filename, tmplstr, fmtlist, out, errout)) == 0) {
+  if ((t = new_template(filename, tmplstr, fmtlist, out, errout)) == 0) {
     return -1;
   }
+  t->roottag = parselist(t, 0);
+  walk(t, t->roottag, varlist);
+  ret = t->error == 0 ? 0 : -1;
+  if (tmplstr == 0 && t->tmplstr != 0) {
+    free((void *)t->tmplstr);
+  }
+  freetag(t->roottag);
+  free(t);
+  return ret;
+}
+
+/*
+ * TMPL_write_to_buffer() outputs a template to buffer pointer "buf" using
+ * variable list "varlist".  If "tmplstr" is null, then we read the
+ * template from "filename", otherwise "tmplstr" is the template.
+ * Parameter "fmtlist" is a format function list that contains
+ * functions that TMPL_VAR tags can specify to output variables.
+ * We return 0 on success otherwise -1.  We write errors to open
+ * file pointer "errout".
+ */
+
+int TMPL_write_to_buffer(const char *filename, const char *tmplstr,
+                         const TMPL_fmtlist *fmtlist,
+                         const TMPL_varlist *varlist, buffer *buf,
+                         FILE *errout) {
+  int ret;
+  template *t;
+
+  if ((t = new_template_for_buffer(filename, tmplstr, fmtlist, buf, errout)) ==
+      0) {
+    return -1;
+  }
+
   t->roottag = parselist(t, 0);
   walk(t, t->roottag, varlist);
   ret = t->error == 0 ? 0 : -1;
