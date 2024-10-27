@@ -1,18 +1,22 @@
-CFLAGS = -I .
+CFLAGS = "-Wall -fPIC -I ."
 
-template: main.o libctemplate.a
-	$(CC) $(CFLAGS) -o template -L . main.o -lctemplate
+all: libctemplate.so
 
-libctemplate.a: ctemplate.o
-	ar r libctemplate.a ctemplate.o
-	ranlib libctemplate.a
+libctemplate.so: ctemplate.c
+	gcc -shared -o libctemplate.so ctemplate.c
 
-ctemplate.o: ctemplate.c ctemplate.h
+install: libctemplate.so
+	install -m 0755 libctemplate.so /usr/lib
+	install -d /usr/include/ctemplate
+	install -m 0644 ctemplate.h /usr/include/ctemplate/ctemplate.h
 
-main.o: main.c ctemplate.h
+uninstall:
+	rm -f /usr/lib/libctemplate.so
+	rm -f /usr/include/ctemplate/ctemplate.h
+	rmdir /usr/include/ctemplate
 
 clean:
-	rm -f *.o *.a template
+	rm -f *.o libctemplate.so
 
 test:
 	cd t; ./test.sh

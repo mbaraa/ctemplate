@@ -8,10 +8,18 @@
 #ifndef _CTEMPLATE_H
 #define _CTEMPLATE_H
 
+#include <ctype.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/stat.h>
+#include <unistd.h>
+
 typedef struct TMPL_varlist TMPL_varlist;
-typedef struct TMPL_loop  TMPL_loop;
+typedef struct TMPL_loop TMPL_loop;
 typedef struct TMPL_fmtlist TMPL_fmtlist;
-typedef void (*TMPL_fmtfunc) (const char *, FILE *);
+typedef void (*TMPL_fmtfunc)(const char *, FILE *);
 
 /*
 
@@ -21,24 +29,26 @@ TMPL_varlist *TMPL_add_var(TMPL_varlist *varlist,
 
 TMPL_varlist *TMPL_add_var(TMPL_varlist *varlist, ...);
 
-TMPL_varlist *TMPL_add_loop(TMPL_varlist *varlist,
-    const char *name, TMPL_loop *loop);
+TMPL_varlist *TMPL_add_loop(TMPL_varlist *varlist, const char *name,
+                            TMPL_loop *loop);
 
 TMPL_loop *TMPL_add_varlist(TMPL_loop *loop, TMPL_varlist *varlist);
 
 void TMPL_free_varlist(TMPL_varlist *varlist);
 
-TMPL_fmtlist *TMPL_add_fmt(TMPL_fmtlist *fmtlist,
-    const char *name, TMPL_fmtfunc fmtfunc);
+TMPL_fmtlist *TMPL_add_fmt(TMPL_fmtlist *fmtlist, const char *name,
+                           TMPL_fmtfunc fmtfunc);
 
 void TMPL_free_fmtlist(TMPL_fmtlist *fmtlist);
 
 int TMPL_write(const char *filename, const char *tmplstr,
-    const TMPL_fmtlist *fmtlist, const TMPL_varlist *varlist,
-    FILE *out, FILE *errout);
+               const TMPL_fmtlist *fmtlist, const TMPL_varlist *varlist,
+               FILE *out, FILE *errout);
 
 void TMPL_encode_entity(const char *value, FILE *out);
 
-void TMPL_encode_url   (const char *value, FILE *out);
+void TMPL_encode_url(const char *value, FILE *out);
+
+TMPL_varlist *TMPL_make_var_list(int num_args, ...);
 
 #endif
