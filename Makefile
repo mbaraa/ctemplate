@@ -1,9 +1,9 @@
-CFLAGS = "-Wall -fPIC -I ."
+CFLAGS = -I .
 
 all: libctemplate.so
 
 libctemplate.so: ctemplate.c
-	gcc -shared -o libctemplate.so ctemplate.c
+	gcc $(CFLAGS) -Wall -fPIC -shared -o libctemplate.so ctemplate.c
 
 install: libctemplate.so
 	install -m 0755 libctemplate.so /usr/lib
