@@ -3,7 +3,7 @@ CFLAGS = -I .
 all: libctemplate.so libctemplate_buffer.so
 
 libctemplate.so: ctemplate.c
-	gcc $(CFLAGS) -Wall -fPIC -g -shared -o libctemplate.so ctemplate.c
+	gcc $(CFLAGS) -Wall -fPIC -g -shared -o libctemplate.so ctemplate.c buffer.c
 
 libctemplate_buffer.so: buffer.c
 	gcc $(CFLAGS) -Wall -fPIC -g -shared -o libctemplate_buffer.so buffer.c
