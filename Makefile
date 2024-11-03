@@ -1,26 +1,30 @@
-CFLAGS = -I .
+all: libctemplate.so
 
-all: libctemplate.so libctemplate_buffer.so
+# Compile source files to object files
+ctemplate.o: ctemplate.c ctemplate.h
+	gcc -Wall -fPIC -g -c ctemplate.c -o ctemplate.o
 
-libctemplate.so: ctemplate.c
-	gcc $(CFLAGS) -Wall -fPIC -g -shared -o libctemplate.so ctemplate.c buffer.c
+buffer.o: buffer.c buffer.h
+	gcc -Wall -fPIC -g -c buffer.c -o buffer.o
 
-libctemplate_buffer.so: buffer.c
-	gcc $(CFLAGS) -Wall -fPIC -g -shared -o libctemplate_buffer.so buffer.c
+# Create the shared library
+libctemplate.so: ctemplate.o buffer.o
+	gcc -shared -o libctemplate.so ctemplate.o buffer.o
 
-install: libctemplate.so libctemplate_buffer.so
-	install -m 0755 libctemplate.so /usr/lib
-	install -m 0755 libctemplate_buffer.so /usr/lib
-	install -d /usr/include/ctemplate
-	install -m 0644 ctemplate.h /usr/include/ctemplate/ctemplate.h
-	install -m 0644 buffer.h /usr/include/ctemplate/buffer.h
+# Install the library and header files
+install: libctemplate.so
+	mkdir -p /usr/lib
+	mkdir -p /usr/include/ctemplate
+	cp libctemplate.so /usr/lib
+	cp ctemplate.h buffer.h /usr/include/ctemplate
+	ldconfig
 
+# Clean up
+clean:
+	rm -f ctemplate.o buffer.o libctemplate.so
+
+# Uninstall the library and header files
 uninstall:
 	rm -f /usr/lib/libctemplate.so
-	rm -f /usr/lib/libctemplate_buffer.so
-	rm -f /usr/include/ctemplate/ctemplate.h
-	rm -f /usr/include/ctemplate/buffer.h
-	rmdir /usr/include/ctemplate
-
-clean:
-	rm -f *.o *.so
+	rm -rf /usr/include/ctemplate
+	ldconfig

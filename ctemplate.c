@@ -1507,6 +1507,7 @@ int TMPL_write(const char *filename, const char *tmplstr,
   if ((t = new_template(filename, tmplstr, fmtlist, out, errout)) == 0) {
     return -1;
   }
+  t->out_buffer = NULL;
   t->roottag = parselist(t, 0);
   walk(t, t->roottag, varlist);
   ret = t->error == 0 ? 0 : -1;
@@ -1540,6 +1541,7 @@ int TMPL_write_to_buffer(const char *filename, const char *tmplstr,
     return -1;
   }
 
+  t->out = NULL;
   t->roottag = parselist(t, 0);
   walk(t, t->roottag, varlist);
   ret = t->error == 0 ? 0 : -1;
