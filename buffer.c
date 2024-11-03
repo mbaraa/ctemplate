@@ -11,7 +11,7 @@ buffer *buffer_create(size_t initial_capacity) {
     safe_free(buf);
     return NULL;
   }
-  buf->size = 0;
+  buf->index = 0;
   buf->capacity = initial_capacity;
   return buf;
 }
@@ -22,10 +22,10 @@ void buffer_destroy(buffer *buf) {
 }
 
 int buffer_write(buffer *buf, const char *data, size_t len) {
-  if (buf->size + len > buf->capacity) {
+  if (buf->index + len > buf->capacity) {
     size_t new_capacity = buf->capacity * 2;
-    if (new_capacity < buf->size + len) {
-      new_capacity = buf->size + len;
+    if (new_capacity < buf->index + len) {
+      new_capacity = buf->index + len;
     }
     char *new_data = realloc(buf->data, new_capacity);
     if (new_data == NULL) {
@@ -34,8 +34,8 @@ int buffer_write(buffer *buf, const char *data, size_t len) {
     buf->data = new_data;
     buf->capacity = new_capacity;
   }
-  memcpy(buf->data + buf->size, data, len);
-  buf->size += len;
+  memcpy(buf->data + buf->index, data, len);
+  buf->index += len;
   return 0;
 }
 
@@ -49,10 +49,10 @@ int buffer_write(buffer *buf, const char *data, size_t len) {
  * @return 0 on success, -1 on reallocation failure.
  */
 int buffer_write_byte(buffer *buf, char byte) {
-  if (buf->size + 1 > buf->capacity) {
+  if (buf->index + 1 > buf->capacity) {
     size_t new_capacity = buf->capacity * 2;
-    if (new_capacity < buf->size + 1) {
-      new_capacity = buf->size + 1;
+    if (new_capacity < buf->index + 1) {
+      new_capacity = buf->index + 1;
     }
     char *new_data = realloc(buf->data, new_capacity);
     if (new_data == NULL) {
@@ -61,31 +61,31 @@ int buffer_write_byte(buffer *buf, char byte) {
     buf->data = new_data;
     buf->capacity = new_capacity;
   }
-  buf->data[buf->size] = byte;
-  buf->size += 1;
+  buf->data[buf->index] = byte;
+  buf->index += 1;
   return 0;
 }
 
 size_t buffer_read(buffer *buf, char *dest, size_t len) {
-  size_t bytes_to_read = (len > buf->size) ? buf->size : len;
+  size_t bytes_to_read = (len > buf->index) ? buf->index : len;
   memcpy(dest, buf->data, bytes_to_read);
-  memmove(buf->data, buf->data + bytes_to_read, buf->size - bytes_to_read);
-  buf->size -= bytes_to_read;
+  memmove(buf->data, buf->data + bytes_to_read, buf->index - bytes_to_read);
+  buf->index -= bytes_to_read;
   return bytes_to_read;
 }
 
 void buffer_reset(buffer *buf) {
-  buf->size = 0;
+  buf->index = 0;
   memset(buf->data, 0, buf->capacity);
 }
 
 char *buffer_data(buffer *buf) {
-  char *data = (char *)malloc(buf->size);
-  strncpy(data, buf->data, buf->size);
+  char *data = (char *)malloc(buf->index);
+  strncpy(data, buf->data, buf->index);
   return data;
 }
 
-size_t buffer_size(buffer *buf) { return buf->size; }
+size_t buffer_size(buffer *buf) { return buf->index; }
 
 void safe_free(void *ptr) {
   free(ptr);

@@ -7,7 +7,7 @@
 
 typedef struct {
   char *data;
-  size_t size;
+  size_t index;
   size_t capacity;
 } buffer;
 
