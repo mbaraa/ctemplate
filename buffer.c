@@ -1,4 +1,5 @@
 #include "buffer.h"
+#include <string.h>
 
 buffer *buffer_create(size_t initial_capacity) {
   buffer *buf = malloc(sizeof(buffer));
@@ -78,7 +79,11 @@ void buffer_reset(buffer *buf) {
   memset(buf->data, 0, buf->capacity);
 }
 
-char *buffer_data(buffer *buf) { return buf->data; }
+char *buffer_data(buffer *buf) {
+  char *data = (char *)malloc(buf->size);
+  strncpy(data, buf->data, buf->size);
+  return data;
+}
 
 size_t buffer_size(buffer *buf) { return buf->size; }
 
