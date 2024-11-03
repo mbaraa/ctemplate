@@ -80,8 +80,9 @@ void buffer_reset(buffer *buf) {
 }
 
 char *buffer_data(buffer *buf) {
-  char *data = (char *)malloc(buf->index);
+  char *data = (char *)malloc(buf->index + 1);
   strncpy(data, buf->data, buf->index);
+  data[buf->index] = '\0';
   return data;
 }
 
