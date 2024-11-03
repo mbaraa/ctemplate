@@ -84,4 +84,10 @@ char *buffer_data(buffer *buf);
  */
 size_t buffer_size(buffer *buf);
 
+/**
+ * @brief Frees the given pointer, and sets it to null to prevent usage after
+ * being freed.
+ */
+void safe_free(void *ptr);
+
 #endif // !_BUFFER_H

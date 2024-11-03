@@ -7,7 +7,7 @@ buffer *buffer_create(size_t initial_capacity) {
   }
   buf->data = malloc(initial_capacity);
   if (buf->data == NULL) {
-    free(buf);
+    safe_free(buf);
     return NULL;
   }
   buf->size = 0;
@@ -16,8 +16,8 @@ buffer *buffer_create(size_t initial_capacity) {
 }
 
 void buffer_destroy(buffer *buf) {
-  free(buf->data);
-  free(buf);
+  safe_free(buf->data);
+  safe_free(buf);
 }
 
 int buffer_write(buffer *buf, const char *data, size_t len) {
@@ -81,3 +81,8 @@ void buffer_reset(buffer *buf) {
 char *buffer_data(buffer *buf) { return buf->data; }
 
 size_t buffer_size(buffer *buf) { return buf->size; }
+
+void safe_free(void *ptr) {
+  free(ptr);
+  ptr = NULL;
+}

@@ -236,7 +236,7 @@ static template *new_template(const char *filename, const char *tmplstr,
                 filename);
       }
       if (buf != 0) {
-        free(buf);
+        safe_free(buf);
       }
       if (fp != 0) {
         fclose(fp);
@@ -295,7 +295,7 @@ static template *new_template_for_buffer(const char *filename,
                 filename);
       }
       if (buf != 0) {
-        free(buf);
+        safe_free(buf);
       }
       if (fp != 0) {
         fclose(fp);
@@ -361,39 +361,39 @@ static void freetag(tagnode *tag) {
   switch (tag->kind) {
 
   case tag_var:
-    free((void *)tag->tag.var.varname);
+    safe_free((void *)tag->tag.var.varname);
     if (tag->tag.var.dfltval != 0) {
-      free((void *)tag->tag.var.dfltval);
+      safe_free((void *)tag->tag.var.dfltval);
     }
     break;
 
   case tag_if:
   case tag_elsif:
-    free((void *)tag->tag.ifelse.varname);
+    safe_free((void *)tag->tag.ifelse.varname);
     if (tag->tag.ifelse.testval != 0) {
-      free((void *)tag->tag.ifelse.testval);
+      safe_free((void *)tag->tag.ifelse.testval);
     }
     freetag(tag->tag.ifelse.tbranch);
     freetag(tag->tag.ifelse.fbranch);
     break;
 
   case tag_loop:
-    free((void *)tag->tag.loop.loopname);
+    safe_free((void *)tag->tag.loop.loopname);
     freetag(tag->tag.loop.body);
     break;
 
   case tag_include:
-    free((void *)tag->tag.include.filename);
+    safe_free((void *)tag->tag.include.filename);
     if ((t = tag->tag.include.tmpl) != 0) {
-      free((void *)t->filename);
-      free((void *)t->tmplstr);
+      safe_free((void *)t->filename);
+      safe_free((void *)t->tmplstr);
       freetag(t->roottag);
-      free(t);
+      safe_free(t);
     }
     break;
   }
   freetag(tag->next);
-  free(tag);
+  safe_free(tag);
 }
 
 /* map tag_kind to a human readable string */
@@ -681,7 +681,7 @@ static tagnode *scantag(template *t, const char *p) {
         err = "(bad \"fmt=\" attribute) ";
         goto failure;
       }
-      free(fmt);
+      safe_free(fmt);
     }
     tag = newtag(t, kind);
     tag->tag.var.varname = name;
@@ -717,7 +717,7 @@ static tagnode *scantag(template *t, const char *p) {
         err = "(bad \"level=\" attribute) ";
         goto failure;
       }
-      free(value);
+      safe_free(value);
     }
     tag = newtag(t, kind);
     tag->tag.breakcont.level = level;
@@ -744,13 +744,13 @@ failure:
 
   t->linenum = linenum;
   if (name != 0) {
-    free(name);
+    safe_free(name);
   }
   if (value != 0) {
-    free(value);
+    safe_free(value);
   }
   if (fmt != 0) {
-    free(fmt);
+    safe_free(fmt);
   }
   if (kind != 0 && t->errout != 0) {
     fprintf(t->errout, "Ignoring bad %s tag %sin file \"%s\" line %d\n",
@@ -1281,7 +1281,7 @@ static void walk(template *t, tagnode *tag, const TMPL_varlist *varlist) {
                                      t->errout);
 
       if (t2 == 0) {
-        free((void *)newfile);
+        safe_free((void *)newfile);
         t->error = 1;
         break;
       }
@@ -1433,15 +1433,15 @@ void TMPL_free_varlist(TMPL_varlist *varlist) {
   for (loop = varlist->loop; loop != 0; loop = loopnext) {
     loopnext = loop->next;
     TMPL_free_varlist(loop->varlist);
-    free((void *)loop->name);
-    free(loop);
+    safe_free((void *)loop->name);
+    safe_free(loop);
   }
   for (var = varlist->var; var != 0; var = varnext) {
     varnext = var->next;
-    free(var);
+    safe_free(var);
   }
   TMPL_free_varlist(varlist->next);
-  free(varlist);
+  safe_free(varlist);
 }
 
 /*
@@ -1484,7 +1484,7 @@ TMPL_fmtlist *TMPL_add_fmt(TMPL_fmtlist *fmtlist, const char *name,
 void TMPL_free_fmtlist(TMPL_fmtlist *fmtlist) {
   if (fmtlist != 0) {
     TMPL_free_fmtlist(fmtlist->next);
-    free(fmtlist);
+    safe_free(fmtlist);
   }
 }
 
@@ -1512,10 +1512,10 @@ int TMPL_write(const char *filename, const char *tmplstr,
   walk(t, t->roottag, varlist);
   ret = t->error == 0 ? 0 : -1;
   if (tmplstr == 0 && t->tmplstr != 0) {
-    free((void *)t->tmplstr);
+    safe_free((void *)t->tmplstr);
   }
   freetag(t->roottag);
-  free(t);
+  safe_free(t);
   return ret;
 }
 
@@ -1546,10 +1546,10 @@ int TMPL_write_to_buffer(const char *filename, const char *tmplstr,
   walk(t, t->roottag, varlist);
   ret = t->error == 0 ? 0 : -1;
   if (tmplstr == 0 && t->tmplstr != 0) {
-    free((void *)t->tmplstr);
+    safe_free((void *)t->tmplstr);
   }
   freetag(t->roottag);
-  free(t);
+  safe_free(t);
   return ret;
 }
 
