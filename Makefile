@@ -1,4 +1,9 @@
-PREFIX?=/usr/local
+ifndef PREFIX
+   PREFIX=/usr
+else
+   PREFIX=/usr/local
+endif
+
 LIB_DIR=$(PREFIX)/lib
 INCLUDE_DIR=$(PREFIX)/include
 
