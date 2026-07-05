@@ -5,7 +5,7 @@ A revived fork of the one and only [ctemplate](https://libctemplate.sourceforge.
 # Installation:
 
 ```bash
-git clone https://github.com/mbaraa/ctemplate
+git clone https://codeberg.org/lordbaraa/ctemplate.git
 cd ctemplate
 make
 sudo make install
@@ -24,7 +24,6 @@ sudo make install
 # Available functions:
 
 - Old
-
   - `TMPL_write()` expands and outputs a template.
   - `TMPL_add_var()` adds simple variables to a variable list.
   - `TMPL_add_varlist()` adds a variable list to a loop variable.
